@@ -58,28 +58,52 @@ def health_check():
 @app.route("/api/debug/<category>")
 def debug_read(category):
     """
-    Temporary troubleshooting route. Calls the blockchain read for one
-    category WITHOUT the try/except that normally hides errors, so the
-    real underlying exception shows up in the response instead of
-    silently becoming null. Remove this route once budgets/spent are
-    showing correctly on /api/projects.
+    Temporary troubleshooting route. Shows exactly which storage area
+    (persistent / temporary / instance) a value was found in, or the
+    raw error if the call itself fails. Remove this route once
+    budgets/spent are showing correctly on /api/projects.
     """
     import traceback
+    import stellar_sdk
     from stellar_sdk import scval
-    result = {"category": category}
+
+    result = {
+        "category": category,
+        "contract_id": chain.CONTRACT_ID,
+        "stellar_sdk_version": getattr(stellar_sdk, "__version__", "unknown"),
+    }
+
+    key = chain._variant_key("Budget", scval.to_symbol(category))
+
+    for label, fn in [
+        ("persistent", lambda: chain._read_direct(server, key, chain.PERSISTENT)),
+        ("temporary", lambda: chain._read_direct(server, key, chain.TEMPORARY)),
+        ("instance", lambda: chain._read_instance(server, key)),
+    ]:
+        try:
+            result[label] = fn()
+        except Exception as e:
+            result[label] = f"ERROR: {type(e).__name__}: {e}"
+
     try:
-        key = chain._variant_key("Budget", scval.to_symbol(category))
-        entry = server.get_contract_data(
+        instance_entry = server.get_contract_data(
             contract_id=chain.CONTRACT_ID,
-            key=key,
+            key=chain._INSTANCE_STORAGE_KEY,
             durability=chain.PERSISTENT,
         )
-        result["raw_entry_repr"] = repr(entry)
-        result["raw_entry_type"] = str(type(entry))
+        result["contract_instance_found"] = instance_entry is not None
+        if instance_entry is not None and instance_entry.val is not None:
+            instance = getattr(instance_entry.val, "instance", None)
+            storage = getattr(instance, "storage", None) if instance else None
+            result["instance_storage_entry_count"] = len(storage) if storage else 0
+            if storage:
+                result["instance_storage_keys_sample"] = [
+                    repr(scval.to_native(e.key)) for e in list(storage)[:10]
+                ]
     except Exception as e:
-        result["error_type"] = str(type(e))
-        result["error_message"] = str(e)
-        result["traceback"] = traceback.format_exc()
+        result["contract_instance_error"] = f"{type(e).__name__}: {e}"
+        result["contract_instance_traceback"] = traceback.format_exc()
+
     return jsonify(result)
 
 
