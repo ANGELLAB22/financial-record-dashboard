@@ -1,0 +1,74 @@
+{
+  "projects": {
+    "PR00001": {
+      "category": "PR00001",
+      "project_name": "Smart Attendance System",
+      "handler": "",
+      "transactions": {
+        "5": {
+          "tx_id": 5,
+          "amount": 183240,
+          "receipt_hash": "278addfbee7eb2df",
+          "date": "",
+          "is_fraud_reported": false
+        }
+      }
+    },
+    "PR00002": {
+      "category": "PR00002",
+      "project_name": "Barangay Information Portal",
+      "handler": "",
+      "transactions": {
+        "1": {
+          "tx_id": 1,
+          "amount": 317650,
+          "receipt_hash": "60d257fae278aef3",
+          "date": "",
+          "is_fraud_reported": false
+        }
+      }
+    },
+    "PR00003": {
+      "category": "PR00003",
+      "project_name": "Student Management System",
+      "handler": "",
+      "transactions": {
+        "2": {
+          "tx_id": 2,
+          "amount": 475000,
+          "receipt_hash": "278addfbee7eb2df",
+          "date": "",
+          "is_fraud_reported": false
+        }
+      }
+    },
+    "PR00004": {
+      "category": "PR00004",
+      "project_name": "Automated Parking Monitor",
+      "handler": "",
+      "transactions": {
+        "3": {
+          "tx_id": 3,
+          "amount": 882430,
+          "receipt_hash": "60d257fae278aef3",
+          "date": "",
+          "is_fraud_reported": false
+        }
+      }
+    },
+    "PR00005": {
+      "category": "PR00005",
+      "project_name": "Inventory Control Platform",
+      "handler": "",
+      "transactions": {
+        "4": {
+          "tx_id": 4,
+          "amount": 546180,
+          "receipt_hash": "278addfbee7eb2df",
+          "date": "",
+          "is_fraud_reported": false
+        }
+      }
+    }
+  }
+}
