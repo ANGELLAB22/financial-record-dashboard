@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Financial Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3F5F7;
+    --surface: #FFFFFF;
+    --ink: #15202B;
+    --muted: #4F5D6B;
+    --rule: #CBD3DA;
+    --civic: #1B4B82;
+    --civic-dark: #123560;
+    --alert: #B3261E;
+    --alert-bg: #FCEDEB;
+    --ok: #1D6B47;
+    --ok-bg: #E6F2EB;
+    --warn: #8A5300;
+    --warn-bg: #FFF3DC;
+    --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 1rem/1.55 var(--sans);
+  }
+
+  a { color: var(--civic); text-underline-offset: 3px; }
+  a:hover { color: var(--civic-dark); }
+  :focus-visible { outline: 3px solid var(--civic); outline-offset: 2px; border-radius: 2px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .muted { color: var(--muted); }
+
+  .skip { position: absolute; left: -999px; top: 8px; background: #fff; padding: 8px 12px; z-index: 10; border: 2px solid var(--civic); }
+  .skip:focus { left: 8px; }
+
+  /* ---------- top of page ---------- */
+  .strip { background: var(--civic-dark); color: #fff; font-size: .875rem; padding: 6px 0; }
+
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--rule); }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 24px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+  .brand { font: 600 1.35rem/1.2 var(--serif); color: var(--ink); text-decoration: none; }
+  .brand:hover { color: var(--civic); }
+
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav a { padding: 8px 12px; text-decoration: none; color: var(--ink); border-bottom: 3px solid transparent; font-weight: 500; }
+  nav a:hover { background: var(--paper); color: var(--ink); }
+  nav a[aria-current="page"] { border-bottom-color: var(--civic); font-weight: 600; }
+  .count { display: inline-block; min-width: 1.6em; padding: 0 7px; margin-left: 6px; border-radius: 10px; background: var(--rule); font-size: .8rem; font-weight: 600; text-align: center; }
+  .count.hot { background: var(--alert); color: #fff; }
+
+  .fresh { border-bottom: 1px solid var(--rule); font-size: .9rem; color: var(--muted); }
+  .fresh.warn { background: var(--warn-bg); color: var(--warn); border-bottom-color: #E6CE9B; }
+  .freshbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+  .freshbar code { font-family: var(--mono); font-size: .85rem; }
+
+  main { padding-top: 32px; padding-bottom: 64px; }
+  main h1:focus { outline: none; }
+
+  /* ---------- type ---------- */
+  h1 { font: 600 2rem/1.2 var(--serif); margin: 0 0 8px; }
+  h2 { font: 600 1.3rem/1.3 var(--serif); margin: 0 0 12px; }
+  .lede { max-width: 66ch; color: var(--muted); margin: 0 0 24px; }
+  p { max-width: 68ch; }
+
+  /* ---------- buttons ---------- */
+  .btn { font: inherit; font-weight: 600; padding: 8px 14px; border: 1px solid var(--civic); background: #fff; color: var(--civic); border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: var(--civic); color: #fff; }
+  .btn[disabled] { opacity: .6; cursor: default; }
+  .linkbtn { font: inherit; font-size: .875rem; font-weight: 600; background: none; border: 0; padding: 2px 4px; color: var(--civic); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .linkbtn:hover { color: var(--civic-dark); }
+
+  /* ---------- notices ---------- */
+  .alertbar, .okbar { display: flex; gap: 12px; align-items: flex-start; padding: 14px 18px; margin: 0 0 24px; }
+  .alertbar { border: 2px solid var(--alert); background: var(--alert-bg); }
+  .alertbar svg { color: var(--alert); flex: 0 0 auto; margin-top: 4px; }
+  .okbar { border: 1px solid #A9CDB8; background: var(--ok-bg); color: var(--ok); }
+  .okbar svg { flex: 0 0 auto; margin-top: 4px; }
+  .alertbar p, .okbar p { margin: 0; }
+
+  /* ---------- totals ---------- */
+  .funds { background: var(--surface); border: 1px solid var(--rule); padding: 20px 24px; margin: 0 0 32px; }
+  .funds-line { font: 500 1.25rem/1.4 var(--serif); margin: 0 0 12px; max-width: none; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .mini { display: flex; gap: 8px 40px; flex-wrap: wrap; margin: 16px 0 0; }
+  .mini dt { color: var(--muted); font-size: .875rem; }
+  .mini dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .bar-track { height: 8px; background: #DCE2E8; border-radius: 4px; overflow: hidden; flex: 1; min-width: 80px; }
+  .bar-track > span { display: block; height: 100%; background: var(--civic); }
+  .bar-track.over > span { background: var(--warn); }
+  .usage { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+  .pct { font-variant-numeric: tabular-nums; font-size: .875rem; min-width: 3ch; text-align: right; }
+
+  /* ---------- filters ---------- */
+  .filters { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; margin: 0 0 8px; }
+  .filters label { display: flex; flex-direction: column; gap: 4px; font-size: .875rem; font-weight: 600; }
+  .filters input, .filters select { font: inherit; font-weight: 400; padding: 9px 10px; border: 1px solid #8A98A5; border-radius: 4px; background: #fff; color: var(--ink); width: 100%; }
+  .result-count { font-size: .875rem; color: var(--muted); margin: 8px 0 12px; }
+
+  /* ---------- tables ---------- */
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--rule); }
+  th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  th { font-weight: 600; font-size: .875rem; color: var(--muted); background: #EEF1F4; }
+  td.num, th.num { text-align: right; }
+  .plink { font-weight: 600; }
+  .code { color: var(--muted); font-size: .875rem; }
+  tr.is-flagged td { background: var(--alert-bg); }
+  tr.is-flagged td:first-child { border-left: 5px solid var(--alert); }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border-radius: 4px; font-size: .875rem; font-weight: 600; border: 1px solid; }
+  .badge.ok { color: var(--ok); background: var(--ok-bg); border-color: #A9CDB8; }
+  .badge.over { color: var(--warn); background: var(--warn-bg); border-color: #E6CE9B; }
+  .badge.flagged { color: #fff; background: var(--alert); border-color: var(--alert); }
+  .note { font-size: .85rem; margin-top: 6px; color: var(--muted); }
+  .note.warn { color: var(--warn); font-weight: 600; }
+
+  /* ---------- the hash seal ---------- */
+  .fp { display: flex; gap: 12px; align-items: flex-start; text-align: left; }
+  .seal { flex: 0 0 auto; color: var(--civic); line-height: 0; }
+  .seal.flagged { color: var(--alert); }
+  code { font-family: var(--mono); font-size: .875rem; }
+  .hash-full { display: block; margin-top: 6px; overflow-wrap: anywhere; font-size: .8rem; }
+  details summary { cursor: pointer; font-size: .85rem; color: var(--civic); margin-top: 2px; }
+
+  /* ---------- project page ---------- */
+  .back { display: inline-block; margin-bottom: 16px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px 40px; margin: 16px 0 24px; }
+  .facts dt { color: var(--muted); font-size: .875rem; }
+  .facts dd { margin: 0; font-weight: 600; }
+  .panel { background: var(--surface); border: 1px solid var(--rule); padding: 20px 24px; margin: 0 0 24px; }
+  .panel .funds-line { margin-bottom: 12px; }
+
+  /* ---------- verify page ---------- */
+  .steps { padding-left: 1.25rem; max-width: 68ch; }
+  .steps li { margin-bottom: 12px; }
+  .contract { background: var(--surface); border: 1px solid var(--rule); padding: 16px 20px; margin: 16px 0 32px; }
+  .contract code { display: block; overflow-wrap: anywhere; margin: 6px 0 12px; font-size: .95rem; }
+  .contract .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .playground { display: flex; gap: 32px 40px; flex-wrap: wrap; align-items: flex-start; margin: 16px 0 8px; }
+  .playground figure { margin: 0; text-align: center; }
+  .playground figcaption { font-size: .875rem; color: var(--muted); margin-top: 8px; max-width: 24ch; }
+  .try { max-width: 720px; margin-bottom: 8px; }
+  .try label { display: block; font-weight: 600; font-size: .875rem; margin-bottom: 4px; }
+  .try input { font: 400 .9rem var(--mono); padding: 9px 10px; border: 1px solid #8A98A5; border-radius: 4px; width: 100%; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 8px 0 32px; }
+  .split ul { margin: 0; padding-left: 1.2rem; }
+  .split li { margin-bottom: 6px; }
+
+  footer { border-top: 1px solid var(--rule); padding-top: 20px; padding-bottom: 40px; font-size: .875rem; color: var(--muted); }
+  footer p { margin: 0 0 8px; max-width: none; }
+  footer code { overflow-wrap: anywhere; }
+
+  .empty { background: var(--surface); border: 1px solid var(--rule); padding: 24px; }
+  .empty p { margin: 0 0 12px; }
+
+  /* ---------- phones: tables turn into stacked rows ---------- */
+  @media (max-width: 900px) {
+    .filters { grid-template-columns: 1fr 1fr; }
+    .filters label:first-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 760px) {
+    h1 { font-size: 1.6rem; }
+    .split { grid-template-columns: 1fr; }
+    .filters { grid-template-columns: 1fr; }
+    table.stack { border: 0; background: transparent; }
+    .stack thead { position: absolute; left: -9999px; }
+    .stack, .stack tbody, .stack tr, .stack td { display: block; width: 100%; }
+    .stack tr { background: var(--surface); border: 1px solid var(--rule); margin-bottom: 12px; padding: 8px 14px; }
+    .stack td { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 6px 0; border: 0; text-align: right; }
+    .stack td::before { content: attr(data-label); color: var(--muted); font-size: .875rem; text-align: left; flex: 0 0 34%; }
+    .stack td.primary { display: block; text-align: left; }
+    .stack td.primary::before { display: none; }
+    .stack tr.is-flagged { background: var(--alert-bg); border-left: 5px solid var(--alert); }
+    .stack tr.is-flagged td { background: transparent; }
+    .stack tr.is-flagged td:first-child { border-left: 0; }
+    .stack td.num { text-align: right; }
+    .usage { min-width: 50%; }
+    .fp { flex-direction: row; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="strip"><div class="wrap">Thesis prototype on Stellar Testnet. Test data only.</div></div>
+
+<header class="topbar">
+  <div class="wrap bar">
+    <a class="brand" href="#/">Project Financial Ledger</a>
+    <nav aria-label="Main">
+      <a href="#/" data-nav="overview">Overview</a>
+      <a href="#/alerts" data-nav="alerts">Risk alerts<span class="count" id="nav-count" hidden></span></a>
+      <a href="#/verify" data-nav="verify">How to verify</a>
+    </nav>
+  </div>
+</header>
+
+<div class="fresh" id="fresh">
+  <div class="wrap freshbar">
+    <span id="fresh-text" role="status">Connecting to the blockchain&hellip;</span>
+    <button class="linkbtn" id="refresh-btn" type="button">Refresh now</button>
+  </div>
+</div>
+
+<main id="main" class="wrap" tabindex="-1">
+  <noscript>This page needs JavaScript to show the ledger.</noscript>
+</main>
+
+<footer class="wrap">
+  <p>Contract <code id="foot-contract"></code></p>
+  <p>Network: Stellar Testnet, a practice network with play money. Data refreshes every 30 seconds.</p>
+  <p><button class="linkbtn" id="sample-toggle" type="button">Preview with sample data</button></p>
+</footer>
+
+<div class="sr-only" id="sr-live" aria-live="polite"></div>
+
+<script>
+const API_BASE = "https://ledger-api-hqz9.onrender.com";
+const CONTRACT_ID = "CDF3GYM6H56PDTFW6XNEDTGICGSMOMN5FLZHPKTURJHOH5WJTNW3NQ42";
+const EXPLORER_URL = "https://stellar.expert/explorer/testnet/contract/" + CONTRACT_ID;
+const REFRESH_MS = 30000;
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const has = v => v !== null && v !== undefined;
+const peso = v => has(v) ? "\u20b1" + Number(v).toLocaleString("en-PH") : "\u2013";
+const plural = (n, one, many) => n === 1 ? one : (many || one + "s");
+const shortHash = h => h && h.length > 16 ? h.slice(0, 6) + "\u2026" + h.slice(-6) : (h || "\u2013");
+
+const ICON = {
+  flagged: '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 1.5 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 6v4M8 11.6v.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  over: '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.6v4M8 10.6v.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  ok: '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 8.5 6.4 12.2 13.5 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+const STATUS_LABEL = { flagged: "Flagged", over: "Over budget", ok: "On track" };
+const badge = key => `<span class="badge ${key}">${ICON[key]}${STATUS_LABEL[key]}</span>`;
+
+function stream(str, n) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  let a = h;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    out.push(((t ^ (t >>> 14)) >>> 0) & 255);
+  }
+  return out;
+}
+
+const f2 = n => n.toFixed(2);
+function pt(r, deg) { const a = (deg - 90) * Math.PI / 180; return [50 + r * Math.cos(a), 50 + r * Math.sin(a)]; }
+function sector(r1, r2, d1, d2) {
+  const [x1, y1] = pt(r2, d1), [x2, y2] = pt(r2, d2), [x3, y3] = pt(r1, d2), [x4, y4] = pt(r1, d1);
+  return `M${f2(x1)} ${f2(y1)}A${r2} ${r2} 0 0 1 ${f2(x2)} ${f2(y2)}L${f2(x3)} ${f2(y3)}A${r1} ${r1} 0 0 0 ${f2(x4)} ${f2(y4)}Z`;
+}
+
+function sealSVG(hash, size, flagged, label) {
+  const b = stream(String(hash || "empty"), 40);
+  let ticks = "", cells = "";
+
+  for (let i = 0; i < 18; i++) {
+    const len = 2 + (b[i] % 6);
+    const deg = i * 10 + 5;
+    for (const d of [deg, 360 - deg]) {
+      const [x1, y1] = pt(38.5, d), [x2, y2] = pt(38.5 + len, d);
+      ticks += `M${f2(x1)} ${f2(y1)}L${f2(x2)} ${f2(y2)}`;
+    }
+  }
+  const rings = [[11, 19], [20.5, 28.5], [30, 36.5]];
+  rings.forEach((r, ri) => {
+    for (let j = 0; j < 6; j++) {
+      if (b[18 + ri * 6 + j] < 150) {
+        for (const s of [j, 11 - j]) cells += sector(r[0], r[1], s * 30 + 1.5, s * 30 + 28.5);
+      }
+    }
+  });
+
+  const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
+  const strike = flagged
+    ? '<path d="M19 81 81 19" stroke="#fff" stroke-width="8" stroke-linecap="round"/><path d="M19 81 81 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>'
+    : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" ${a11y}>` +
+    `<circle cx="50" cy="50" r="47.5" fill="#fff" stroke="currentColor" stroke-width="1.6"${flagged ? ' stroke-dasharray="5 3"' : ""}/>` +
+    `<path d="${ticks}" stroke="currentColor" stroke-width="1.6" fill="none"/>` +
+    `<path d="${cells}" fill="currentColor"/>` +
+    `<circle cx="50" cy="50" r="5.5" fill="currentColor"/>${strike}</svg>`;
+}
+
+function sampleProjects() {
+  const tx = (id, amount, date, flag, hash) =>
+    ({ tx_id: id, amount, receipt_hash: hash, hash_on_chain: hash, date, flagged_on_chain: flag, is_fraud_reported: flag });
+  const P = (category, project_name, handler, budget, transactions) => {
+    const spent = transactions.reduce((s, t) => s + t.amount, 0);
+    return { category, project_name, handler, budget, spent, remaining: budget - spent, over_budget: spent > budget, has_risk_alert: transactions.some(t => t.flagged_on_chain), transactions };
+  };
+  return [
+    P("PR00001", "Smart Attendance System", "", 185000, [tx(5, 183240, "", false, "278addfbee7eb2df")]),
+    P("PR00002", "Barangay Information Portal", "", 320000, [tx(1, 317650, "", true, "60d257fae278aef3")]),
+    P("PR00003", "Student Management System", "", 475000, [tx(2, 475000, "", false, "278addfbee7eb2df")]),
+    P("PR00004", "Automated Parking Monitor", "", 890000, [tx(3, 882430, "", false, "60d257fae278aef3")]),
+    P("PR00005", "Inventory Control Platform", "", 550000, [tx(4, 546180, "", false, "278addfbee7eb2df")])
+  ];
+}
+
+/* =====================================================================
+   DATA: loading, cleaning, totals
+   ===================================================================== */
+const state = {
+  data: null, summary: null, mode: "loading",   // mode: loading | live | stale | offline | preview
+  lastChecked: null, forceSample: false, sig: "",
+  filters: { q: "", category: "", handler: "", status: "" }
+};
+
+async function getJSON(path) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const res = await fetch(API_BASE + path, { signal: ctl.signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally { clearTimeout(timer); }
+}
+
+function normalize(projects) {
+  return projects.map(p => {
+    const txs = (p.transactions || []).slice().sort((a, b) => a.tx_id - b.tx_id).map(t => ({
+      ...t,
+      flagged: !!t.flagged_on_chain,
+      onChain: t.hash_on_chain || null,
+      own: t.receipt_hash || null,
+      hash: t.hash_on_chain || t.receipt_hash || ""
+    }));
+    const flaggedCount = txs.filter(t => t.flagged).length;
+    const status = flaggedCount ? "flagged" : (p.over_budget ? "over" : "ok");
+    return { ...p, txs, flaggedCount, status, handler: p.handler || "", name: p.project_name || p.category };
+  });
+}
+
+function buildSummary(data, api) {
+  const totalBudget = data.reduce((s, p) => s + (p.budget || 0), 0);
+  const totalSpent = data.reduce((s, p) => s + (p.spent || 0), 0);
+  const local = {
+    project_count: data.length,
+    total_budget: totalBudget,
+    total_spent: totalSpent,
+    total_remaining: totalBudget - totalSpent,
+    flagged_transaction_count: data.reduce((s, p) => s + p.flaggedCount, 0),
+    over_budget_project_count: data.filter(p => p.over_budget).length
+  };
+  return { ...local, ...(api || {}) };
+}
+
+function setData(projects, apiSummary, mode) {
+  const sig = JSON.stringify([projects, mode]);
+  const changed = sig !== state.sig;
+  const data = normalize(projects);
+  Object.assign(state, { data, summary: buildSummary(data, apiSummary), mode, sig });
+  updateChrome();
+  if (changed) render({});
+}
+
+async function load() {
+  if (state.forceSample) { setData(sampleProjects(), null, "preview"); return; }
+  try {
+    const projects = await getJSON("/api/projects");
+    if (!Array.isArray(projects)) throw new Error("Unexpected response");
+    let summary = null;
+    try { summary = await getJSON("/api/summary"); } catch (e) { /* totals are worked out locally instead */ }
+    state.lastChecked = Date.now();
+    setData(projects, summary, "live");
+  } catch (err) {
+    console.error("Could not reach the API:", err);
+    if (state.mode === "live" || state.mode === "stale") { state.mode = "stale"; updateChrome(); }
+    else setData(sampleProjects(), null, "offline");
+  }
+}
+
+/* =====================================================================
+   TOP-OF-PAGE STATUS + NAV COUNT + FOOTER
+   ===================================================================== */
+function updateChrome() {
+  const time = state.lastChecked
+    ? new Date(state.lastChecked).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" }) : "";
+  const band = $("#fresh"), text = $("#fresh-text");
+  band.className = "fresh" + (state.mode === "live" || state.mode === "loading" ? "" : " warn");
+  const msgs = {
+    loading: "Connecting to the blockchain\u2026",
+    live: `Live from the Stellar Testnet. Last checked with the blockchain at ${time}.`,
+    stale: `Couldn't refresh just now. Showing what was last checked at ${time}.`,
+    offline: `Showing sample data. This page can't reach its data server at ${esc(API_BASE)}. Start it with <code>python api_server.py</code>, then choose Refresh now.`,
+    preview: "Showing sample data for a design preview. Nothing here comes from the blockchain."
+  };
+  text.innerHTML = msgs[state.mode];
+
+  const n = state.summary ? state.summary.flagged_transaction_count : 0;
+  const c = $("#nav-count");
+  c.hidden = !state.summary;
+  c.textContent = n;
+  c.className = "count" + (n > 0 ? " hot" : "");
+  c.setAttribute("aria-label", `${n} flagged`);
+
+  $("#sample-toggle").textContent = state.forceSample ? "Switch back to live data" : "Preview with sample data";
+  $("#foot-contract").textContent = CONTRACT_ID;
+}
+
+/* =====================================================================
+   PIECES USED ON SEVERAL PAGES
+   ===================================================================== */
+function usageBar(p) {
+  const pct = p.budget ? (p.spent || 0) / p.budget * 100 : 0;
+  return `<div class="usage"><div class="bar-track${p.over_budget ? " over" : ""}"><span style="width:${Math.min(100, pct).toFixed(1)}%"></span></div><span class="pct">${Math.round(pct)}%</span></div>`;
+}
+
+function fingerprint(t, flagged) {
+  const full = t.hash;
+  if (!full) return '<span class="muted">No fingerprint recorded</span>';
+  return `<div class="fp">
+    <span class="seal${flagged ? " flagged" : ""}">${sealSVG(full, 44, flagged)}</span>
+    <div>
+      <code title="${esc(full)}">${esc(shortHash(full))}</code>
+      <button class="linkbtn" type="button" data-copy="${esc(full)}" aria-label="Copy receipt fingerprint for transaction ${esc(t.tx_id)}">Copy</button>
+      ${full.length > 16 ? `<details><summary>Show full fingerprint</summary><code class="hash-full">${esc(full)}</code></details>` : ""}
+    </div>
+  </div>`;
+}
+
+function txStatus(t) {
+  let html = t.flagged
+    ? `<span class="badge flagged">${ICON.flagged}Flagged as possible fraud</span>`
+    : `<span class="badge ok">${ICON.ok}Recorded, not flagged</span>`;
+  if (t.onChain && t.own && t.onChain !== t.own) html += '<div class="note warn">Fingerprint on the blockchain differs from our records</div>';
+  else if (!t.onChain) html += '<div class="note">Blockchain value could not be read. Showing our record.</div>';
+  return html;
+}
+
+function emptyBox(title, body, extra) {
+  return `<div class="empty"><h2>${esc(title)}</h2><p>${body}</p>${extra || ""}</div>`;
+}
+
+/* =====================================================================
+   PAGE 1: OVERVIEW
+   ===================================================================== */
+function viewOverview() {
+  const d = state.data, s = state.summary;
+  if (!d.length) return `<h1>Budgets and spending</h1>` + emptyBox("No projects yet", "When the first receipt is recorded on the blockchain, its project will appear here.");
+
+  const pct = s.total_budget ? Math.min(100, s.total_spent / s.total_budget * 100) : 0;
+  const nFlag = s.flagged_transaction_count;
+  const nFlagProj = d.filter(p => p.flaggedCount).length;
+
+  const alert = nFlag > 0
+    ? `<div class="alertbar">${ICON.flagged.replace('width="16" height="16"', 'width="24" height="24"')}<p><strong>${nFlag} ${plural(nFlag, "transaction")} flagged as possible fraud</strong> in ${nFlagProj} ${plural(nFlagProj, "project")}. <a href="#/alerts">Review flagged transactions</a></p></div>`
+    : `<div class="okbar">${ICON.ok}<p>No transactions are flagged as possible fraud.</p></div>`;
+
+  return `
+    <h1>Budgets and spending</h1>
+    <p class="lede">Every budget, amount spent and receipt fingerprint below is read from a smart contract on the Stellar Testnet.</p>
+    ${alert}
+    <section class="funds" aria-labelledby="funds-h">
+      <h2 id="funds-h">All projects together</h2>
+      <p class="funds-line"><span class="num">${peso(s.total_spent)}</span> spent of <span class="num">${peso(s.total_budget)}</span> budgeted</p>
+      <div class="bar-track" aria-hidden="true"><span style="width:${pct.toFixed(1)}%"></span></div>
+      <dl class="mini">
+        <div><dt>Remaining</dt><dd>${peso(s.total_remaining)}</dd></div>
+        <div><dt>Projects</dt><dd>${s.project_count}</dd></div>
+        <div><dt>Projects over budget</dt><dd>${s.over_budget_project_count}</dd></div>
+      </dl>
+    </section>
+    <h2>Projects</h2>
+    <form class="filters" role="search" aria-label="Filter projects" onsubmit="return false">
+      <label>Search<input type="search" id="f-q" placeholder="Name, code or handler" autocomplete="off"></label>
+      <label>Category code<select id="f-category"></select></label>
+      <label>Handler<select id="f-handler"></select></label>
+      <label>Status<select id="f-status">
+        <option value="">All statuses</option><option value="flagged">Flagged</option><option value="over">Over budget</option><option value="ok">On track</option>
+      </select></label>
+    </form>
+    <p class="result-count" id="result-count" aria-live="polite"></p>
+    <div id="project-table"></div>`;
+}
+
+function bindOverview() {
+  if (!state.data.length) return;
+  const f = state.filters;
+  const cats = state.data.map(p => p.category).sort();
+  const handlers = [...new Set(state.data.map(p => p.handler).filter(Boolean))].sort();
+  if (f.category && !cats.includes(f.category)) f.category = "";
+  if (f.handler && !handlers.includes(f.handler)) f.handler = "";
+
+  $("#f-category").innerHTML = '<option value="">All codes</option>' + cats.map(c => `<option>${esc(c)}</option>`).join("");
+  $("#f-handler").innerHTML = '<option value="">All handlers</option>' + handlers.map(h => `<option>${esc(h)}</option>`).join("");
+  $("#f-q").value = f.q; $("#f-category").value = f.category; $("#f-handler").value = f.handler; $("#f-status").value = f.status;
+
+  $("#f-q").addEventListener("input", e => { f.q = e.target.value; renderTable(); });
+  for (const key of ["category", "handler", "status"]) {
+    $("#f-" + key).addEventListener("change", e => { f[key] = e.target.value; renderTable(); });
+  }
+  renderTable();
+}
+
+function renderTable() {
+  const f = state.filters, q = f.q.trim().toLowerCase();
+  const rows = state.data.filter(p =>
+    (!q || [p.name, p.category, p.handler].some(x => String(x).toLowerCase().includes(q))) &&
+    (!f.category || p.category === f.category) &&
+    (!f.handler || p.handler === f.handler) &&
+    (!f.status || p.status === f.status));
+
+  $("#result-count").textContent = `Showing ${rows.length} of ${state.data.length} ${plural(state.data.length, "project")}`;
+
+  if (!rows.length) {
+    $("#project-table").innerHTML = emptyBox("No projects match", "Try a different search, or set the filters back to All.", '<button class="btn" type="button" id="clear-filters">Clear filters</button>');
+    $("#clear-filters").addEventListener("click", () => {
+      Object.assign(state.filters, { q: "", category: "", handler: "", status: "" });
+      $("#f-q").value = ""; ["category", "handler", "status"].forEach(k => $("#f-" + k).value = "");
+      renderTable();
+    });
+    return;
+  }
+
+  $("#project-table").innerHTML = `<table class="stack">
+    <thead><tr><th>Project</th><th>Handler</th><th class="num">Budget</th><th class="num">Spent</th><th>Budget used</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(p => `
+      <tr class="${p.status === "flagged" ? "is-flagged" : ""}">
+        <td class="primary"><a class="plink" href="#/project/${encodeURIComponent(p.category)}">${esc(p.name)}</a><div class="code">${esc(p.category)}</div></td>
+        <td data-label="Handler">${p.handler ? esc(p.handler) : '<span class="muted">Not listed</span>'}</td>
+        <td class="num" data-label="Budget">${peso(p.budget)}</td>
+        <td class="num" data-label="Spent">${peso(p.spent)}</td>
+        <td data-label="Budget used">${usageBar(p)}</td>
+        <td data-label="Status">${badge(p.status)}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+}
+
+/* =====================================================================
+   PAGE 2: ONE PROJECT
+   ===================================================================== */
+function viewProject(code) {
+  const p = state.data.find(x => x.category === code);
+  if (!p) return `<a class="back" href="#/">Back to all projects</a><h1>Project not found</h1>` +
+    emptyBox("We can't find " + code, "It may not have been recorded yet, or the code may be mistyped.", '<a class="btn" href="#/">See all projects</a>');
+
+  const dates = p.txs.map(t => t.date).filter(Boolean).sort();
+  const range = !dates.length ? "\u2013" : (dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} to ${dates[dates.length - 1]}`);
+  const flaggedTx = p.txs.filter(t => t.flagged);
+
+  let budgetLine;
+  if (!has(p.budget)) budgetLine = "No budget has been set for this project on the blockchain yet.";
+  else if (p.over_budget) budgetLine = `<span class="num">${peso(p.spent)}</span> spent of <span class="num">${peso(p.budget)}</span> budget. <span class="num">${peso((p.spent || 0) - p.budget)}</span> over budget.`;
+  else budgetLine = `<span class="num">${peso(p.spent || 0)}</span> spent of <span class="num">${peso(p.budget)}</span> budget. <span class="num">${peso(has(p.remaining) ? p.remaining : p.budget - (p.spent || 0))}</span> remaining.`;
+
+  const banner = flaggedTx.length ? `<div class="alertbar" role="group" aria-label="Flagged transactions">${ICON.flagged.replace('width="16" height="16"', 'width="24" height="24"')}
+      <p><strong>${flaggedTx.length} ${plural(flaggedTx.length, "transaction")} in this project ${plural(flaggedTx.length, "is", "are")} flagged as possible fraud.</strong>
+      Jump to: ${flaggedTx.map(t => `<button class="linkbtn" type="button" data-jump="tx-${esc(t.tx_id)}">Transaction ${esc(t.tx_id)}</button>`).join(" ")}</p></div>` : "";
+
+  const ledger = p.txs.length ? `<table class="stack">
+      <thead><tr><th>Tx ID</th><th>Date</th><th class="num">Amount</th><th>Receipt fingerprint</th><th>Status</th></tr></thead>
+      <tbody>${p.txs.map(t => `
+        <tr id="tx-${esc(t.tx_id)}" tabindex="-1" class="${t.flagged ? "is-flagged" : ""}">
+          <td data-label="Tx ID"><strong>${esc(t.tx_id)}</strong></td>
+          <td data-label="Date">${t.date ? esc(t.date) : "\u2013"}</td>
+          <td class="num" data-label="Amount">${peso(t.amount)}</td>
+          <td data-label="Receipt fingerprint">${fingerprint(t, t.flagged)}</td>
+          <td data-label="Status">${txStatus(t)}</td>
+        </tr>`).join("")}</tbody></table>`
+    : emptyBox("No transactions yet", "A receipt for this project has not been recorded on the blockchain. It will appear here once it is.");
+
+  return `
+    <a class="back" href="#/">Back to all projects</a>
+    <h1>${esc(p.name)}</h1>
+    <dl class="facts">
+      <div><dt>Category code</dt><dd>${esc(p.category)}</dd></div>
+      <div><dt>Handler</dt><dd>${p.handler ? esc(p.handler) : "Not listed"}</dd></div>
+      <div><dt>Recorded dates</dt><dd>${esc(range)}</dd></div>
+      <div><dt>Status</dt><dd>${badge(p.status)}</dd></div>
+    </dl>
+    ${banner}
+    <section class="panel" aria-labelledby="bud-h">
+      <h2 id="bud-h">Budget and spending</h2>
+      <p class="funds-line">${budgetLine}</p>
+      <div class="bar-track${p.over_budget ? " over" : ""}" aria-hidden="true"><span style="width:${Math.min(100, p.budget ? (p.spent || 0) / p.budget * 100 : 0).toFixed(1)}%"></span></div>
+    </section>
+    <h2>Transactions</h2>
+    ${ledger}`;
+}
+
+/* =====================================================================
+   PAGE 3: RISK ALERTS
+   ===================================================================== */
+function viewAlerts() {
+  const rows = [];
+  state.data.forEach(p => p.txs.filter(t => t.flagged).forEach(t => rows.push({ p, t })));
+  rows.sort((a, b) => (b.t.date || "").localeCompare(a.t.date || "") || b.t.tx_id - a.t.tx_id);
+
+  const intro = `<h1>Risk alerts</h1>
+    <p class="lede">A flag is written to the blockchain after the fraud check marks a receipt as suspicious. A flag means "please review this", not a final ruling.</p>`;
+
+  if (!rows.length) return intro + emptyBox("Nothing is flagged", "No transaction has been flagged as possible fraud. If one is, it will show up here with its project and receipt.", '<a class="btn" href="#/">Back to overview</a>');
+
+  return intro + `<table class="stack">
+    <thead><tr><th>Tx ID</th><th>Date</th><th>Project</th><th class="num">Amount</th><th>Receipt fingerprint</th></tr></thead>
+    <tbody>${rows.map(({ p, t }) => `
+      <tr class="is-flagged">
+        <td data-label="Tx ID"><strong>${esc(t.tx_id)}</strong></td>
+        <td data-label="Date">${t.date ? esc(t.date) : "\u2013"}</td>
+        <td data-label="Project"><a class="plink" href="#/project/${encodeURIComponent(p.category)}">${esc(p.name)}</a><div class="code">${esc(p.category)}</div></td>
+        <td class="num" data-label="Amount">${peso(t.amount)}</td>
+        <td data-label="Receipt fingerprint">${fingerprint(t, true)}</td>
+      </tr>`).join("")}</tbody></table>`;
+}
+
+/* =====================================================================
+   PAGE 4: HOW TO VERIFY
+   ===================================================================== */
+function viewVerify() {
+  return `
+    <h1>How to verify these numbers</h1>
+    <p class="lede">You do not have to take our word for it. The figures on this site come from a public blockchain, and anyone can look at the same records.</p>
+
+    <ol class="steps">
+      <li><strong>Open the contract.</strong> The contract below holds every budget, amount and fingerprint shown here. It opens on Stellar Expert, a public explorer we do not control.</li>
+      <li><strong>Look at its recorded activity.</strong> Find the calls named <code>record_transaction</code> and <code>flag_transaction</code>, and the values stored in the contract. The explorer's layout can change, but these names stay the same.</li>
+      <li><strong>Compare.</strong> The amounts, fingerprints and flags there should match the ledger on this site. If a number here ever differs from the blockchain, trust the blockchain.</li>
+    </ol>
+
+    <section class="contract" aria-labelledby="contract-h">
+      <h2 id="contract-h">Contract on Stellar Testnet</h2>
+      <code>${esc(CONTRACT_ID)}</code>
+      <div class="row">
+        <a class="btn" href="${esc(EXPLORER_URL)}" target="_blank" rel="noopener noreferrer">Open on Stellar Expert (new tab)</a>
+        <button class="btn" type="button" data-copy="${esc(CONTRACT_ID)}">Copy contract ID</button>
+      </div>
+    </section>
+
+    <h2>What is a receipt seal?</h2>
+    <p>Each receipt gets a fingerprint, a short code worked out from the receipt itself. The same receipt always gives the same code. Change even one digit and the code becomes completely different. The seal is a picture drawn from that code, so you can compare two fingerprints by eye.</p>
+    <p><strong>This seal is drawn from the receipt's digital fingerprint. Change one digit of the receipt and the seal changes.</strong> Try it:</p>
+    <div class="try">
+      <label for="try-input">Receipt fingerprint</label>
+      <input id="try-input" type="text" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="playground">
+      <figure><div class="seal" id="seal-a"></div><figcaption>The fingerprint you typed</figcaption></figure>
+      <figure><div class="seal" id="seal-b"></div><figcaption>The same fingerprint with its last character changed</figcaption></figure>
+    </div>
+
+    <h2>Where each number comes from</h2>
+    <div class="split">
+      <div class="panel"><h3 style="margin:0 0 8px">On the blockchain</h3>
+        <ul><li>Approved budget for each project</li><li>Amount spent so far</li><li>Receipt fingerprint for each transaction</li><li>Fraud flag for each transaction</li></ul>
+        <p class="muted" style="margin-top:12px">These cannot be quietly edited after they are recorded.</p></div>
+      <div class="panel"><h3 style="margin:0 0 8px">From our own records</h3>
+        <ul><li>Project name</li><li>Handler</li><li>Transaction date</li></ul>
+        <p class="muted" style="margin-top:12px">Kept off the blockchain to save space. Someone with access to our records could change these, but not the numbers on the left.</p></div>
+    </div>`;
+}
+
+function exampleHash(seed) {
+  return stream(seed, 32).map(x => x.toString(16).padStart(2, "0")).join("");
+}
+
+function bindVerify() {
+  const first = state.data && state.data.flatMap(p => p.txs).find(t => t.hash);
+  const input = $("#try-input");
+  input.value = first ? first.hash : exampleHash("example-receipt");
+  const draw = () => {
+    const v = input.value.trim();
+    const alt = v ? v.slice(0, -1) + (v.slice(-1) === "0" ? "1" : "0") : "";
+    $("#seal-a").innerHTML = v ? sealSVG(v, 200, false, "Seal for the fingerprint you typed") : "";
+    $("#seal-b").innerHTML = v ? sealSVG(alt, 200, false, "Seal for the fingerprint with its last character changed") : "";
+  };
+  input.addEventListener("input", draw);
+  draw();
+}
+
+/* =====================================================================
+   ROUTING: which page to show, based on the # part of the address
+   ===================================================================== */
+function parseRoute() {
+  const [a, b] = (location.hash || "#/").replace(/^#\/?/, "").split("/");
+  if (!a) return { name: "overview" };
+  if (a === "project" && b) return { name: "project", code: decodeURIComponent(b) };
+  if (a === "alerts") return { name: "alerts" };
+  if (a === "verify") return { name: "verify" };
+  return { name: "notfound" };
+}
+
+function render(opts = {}) {
+  const main = $("#main");
+  if (!state.data) { main.innerHTML = '<p class="muted">Connecting to the blockchain\u2026</p>'; return; }
+  const r = parseRoute();
+
+  document.querySelectorAll("nav a").forEach(a => {
+    const on = a.dataset.nav === (r.name === "project" ? "overview" : r.name);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+
+  const titles = { overview: "Budgets and spending", project: "Project", alerts: "Risk alerts", verify: "How to verify", notfound: "Page not found" };
+  document.title = titles[r.name] + " | Project Financial Ledger";
+
+  if (r.name === "overview") main.innerHTML = viewOverview();
+  else if (r.name === "project") main.innerHTML = viewProject(r.code);
+  else if (r.name === "alerts") main.innerHTML = viewAlerts();
+  else if (r.name === "verify") main.innerHTML = viewVerify();
+  else main.innerHTML = '<h1>Page not found</h1>' + emptyBox("That page doesn't exist", "Use the menu at the top to find what you need.", '<a class="btn" href="#/">Go to overview</a>');
+
+  if (r.name === "overview") bindOverview();
+  if (r.name === "verify") bindVerify();
+
+  if (opts.focus) {
+    window.scrollTo(0, 0);
+    const h1 = $("h1", main);
+    if (h1) { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: true }); }
+  }
+}
+
+/* =====================================================================
+   COPY BUTTONS, JUMP LINKS, REFRESH, SAMPLE TOGGLE
+   ===================================================================== */
+async function copyText(text, btn) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else throw new Error("no clipboard api");
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e2) { /* nothing more we can do */ }
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = "Copied";
+  $("#sr-live").textContent = "Copied to clipboard";
+  setTimeout(() => { btn.textContent = old; $("#sr-live").textContent = ""; }, 1600);
+}
+
+document.addEventListener("click", e => {
+  const copy = e.target.closest("[data-copy]");
+  if (copy) { copyText(copy.dataset.copy, copy); return; }
+  const jump = e.target.closest("[data-jump]");
+  if (jump) {
+    const row = document.getElementById(jump.dataset.jump);
+    if (row) { row.scrollIntoView({ block: "center" }); row.focus({ preventScroll: true }); }
+  }
+});
+
+$("#refresh-btn").addEventListener("click", async e => {
+  const b = e.currentTarget; b.disabled = true; b.textContent = "Checking\u2026";
+  await load();
+  b.disabled = false; b.textContent = "Refresh now";
+});
+
+$("#sample-toggle").addEventListener("click", () => {
+  state.forceSample = !state.forceSample;
+  state.mode = state.forceSample ? state.mode : "loading";
+  state.sig = "";
+  load();
+});
+
+window.addEventListener("hashchange", () => render({ focus: true }));
+
+setInterval(() => { if (!document.hidden && !state.forceSample) load(); }, REFRESH_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !state.forceSample) load(); });
+
+updateChrome();
+render({});
+load();
+</script>
+</body>
+</html>

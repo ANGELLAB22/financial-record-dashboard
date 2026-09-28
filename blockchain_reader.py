@@ -8,7 +8,7 @@ DataKey enum defined in the contract's lib.rs.
 from stellar_sdk import scval
 from stellar_sdk import xdr as stellar_xdr
 
-CONTRACT_ID = "CB2VJE6BEJ6NPYX7KPIG6YPXADIQ6N2M6CJF6TDVEZK7GNJDFQ2A4NC5"
+CONTRACT_ID = "CDF3GYM6H56PDTFW6XNEDTGICGSMOMN5FLZHPKTURJHOH5WJTNW3NQ42"
 
 INSTANCE = stellar_xdr.ContractDataDurability.PERSISTENT
 PERSISTENT = stellar_xdr.ContractDataDurability.PERSISTENT
